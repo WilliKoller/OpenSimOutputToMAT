@@ -1,0 +1,15 @@
+Es ist ein Fehler aufgetreten!
+Fehlermeldung:
+Java exception occurred: 
+java.io.IOException: Model::equilibrateMuscles() Unable to compute equilibrium for this muscle.
+Please verify that the initial activation is valid and that the length of the musculotendon actuator doesn't produce a pennation angle of 90 degrees or a negative fiber length.
+
+  Solution error 0.193896 exceeds tolerance of 1.23484e-06
+  Newton iterations reached limit of 20
+  Activation is 0.05
+  Fiber length is nan
+
+	In Object 'tfl_r' of type Thelen2003Muscle.
+	Thrown at Thelen2003Muscle.cpp:376 in computeInitialFiberEquilibrium().
+	at org.opensim.modeling.opensimActuatorsAnalysesToolsJNI.AnalyzeTool_run__SWIG_0(Native Method)
+	at org.opensim.modeling.AnalyzeTool.run(AnalyzeTool.java:154)

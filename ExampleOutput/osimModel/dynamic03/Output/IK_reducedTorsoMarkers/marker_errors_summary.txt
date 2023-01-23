@@ -1,0 +1,4 @@
+Maximaler Marker Error: 24.0 mm
+Maximaler Marker Error at frame: 51
+Maximaler RMS Error: 9.2 mm
+Maximaler RMS Error at frame: 51

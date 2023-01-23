@@ -1,0 +1,34 @@
+clear;
+dataPath = './ExampleOutput';
+load(fullfile(dataPath, 'dataStruct_ErrorScores.mat'));
+%%
+
+alpha = 0.1;
+fieldsToPlotLeft = {'pelvis_tilt', 'pelvis_list', 'pelvis_rotation', 'hip_flexion_l', 'hip_adduction_l', 'hip_rotation_l', 'knee_angle_l', 'angkle_angle_l', 'subtalar_l'};
+fieldsToPlotRight = fieldsToPlotLeft;
+for f = 1 : numel(fieldsToPlotRight)
+    if strcmp(fieldsToPlotRight{i}(end-1 : end), '_l')
+        fieldsToPlotRight{i} = [fieldsToPlotRight{i}(end-2) '_r'];
+    end
+end
+
+models = fieldnames(data.(section));
+for i = 1 : numel(models)
+    model = models{i};
+    figure('Position', [488,342,1038,420]); 
+    tiledlayout(3, 3)
+    sgtitle(model, 'Interpreter', 'none')
+    
+    [tmp_data, ~] = f_getArrayForField(data.(section).(model), fieldToCompareLeft);
+    nexttile; hold on;
+    stdshade(tmp_data, alpha, [0 0 0]);
+    title('left');
+    
+    [~, tmp_data] = f_getArrayForField(data.(section).(model), fieldToCompareRight);
+    nexttile; hold on;
+    stdshade(tmp_data, alpha, [0 0 0]);
+    title('right');
+
+    leg = legend({'std', 'mean'}, 'Orientation', 'Horizontal');
+    leg.Layout.Tile = 'north';
+end

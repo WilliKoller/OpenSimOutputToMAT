@@ -1,18 +1,22 @@
 clear;
-dataPath = './ExampleOutput';
+dataPath = '/Users/niklasnagel/Documents/Simulationsresults';
 load(fullfile(dataPath, 'dataStruct_ErrorScores.mat'));
 %%
-% fieldToCompareLeft = 'knee_angle_l_moment';
-% fieldToCompareRight = 'knee_angle_r_moment';
-% section = 'ID';
+% fieldToCompareLeft = 'knee_angle_l';
+% fieldToCompareRight = 'knee_angle_r';
+% section = 'IK';
 
-% fieldToCompareLeft = 'hip_flexion_l_moment';
-% fieldToCompareRight = 'hip_flexion_r_moment';
-% section = 'ID';
+fieldToCompareLeft = 'hip_flexion_l_moment';
+fieldToCompareRight = 'hip_flexion_r_moment';
+section = 'ID';
 
-fieldToCompareLeft = 'hip_flexion_l';
-fieldToCompareRight = 'hip_flexion_r';
-section = 'IK';
+% fieldToCompareLeft = 'recfem_r';
+% fieldToCompareRight = 'recfem_l';
+% section = 'SO';
+
+% fieldToCompareLeft = 'hip_r_on_femur_r_in_femur_r_fx';
+% fieldToCompareRight = 'hip_l_on_femur_l_in_femur_l_fx';
+% section = 'JRL';
 
 alpha = 0.1;
 

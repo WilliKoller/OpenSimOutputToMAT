@@ -1,5 +1,6 @@
 clear;
 dataPath = './ExampleOutput';
+dataPath = 'C:\Users\willi\Desktop\Katya\2024_10_30\SimulationOutputGRFKatya';
 load(fullfile(dataPath, 'dataStruct_ErrorScores.mat'));
 %%
 

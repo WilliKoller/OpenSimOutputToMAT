@@ -1,6 +1,6 @@
 %% load data
 clear;
-dataPath = './ExampleOutput';
+dataPath = 'C:\Users\willi\ucloud\PhD\Study_PrePostSurgery\MSK_Output';
 load(fullfile(dataPath, 'dataStruct_ErrorScores_no_trials_removed.mat'));
 
 %% remove trials with ErrorScore > 2 --> IK error or Simulation Error

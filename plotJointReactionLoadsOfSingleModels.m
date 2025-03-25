@@ -47,15 +47,15 @@ for i = 1 : numel(models)
         tmp_data = tmp_data / (data.(section).(model).model_mass * 9.81);
         stdshade(tmp_data * factorsRight(f), alpha, [0 0 1]);
 
-        % f_getArrayForField returns the required data for the left and right steps
-        [tmp_data, ~] = f_getArrayForField(data.(section).(model), fieldsToPlotLeft{f}, 0, [], 'running');
-        tmp_data = tmp_data / (data.(section).(model).model_mass * 9.81);
-        stdshade(tmp_data, alpha, [1 0.5 0]);
-
-        % f_getArrayForField returns the required data for the left and right steps
-        [~, tmp_data] = f_getArrayForField(data.(section).(model), fieldsToPlotRight{f}, 0, [], 'running');
-        tmp_data = tmp_data / (data.(section).(model).model_mass * 9.81);
-        stdshade(tmp_data * factorsRight(f), alpha, [0 0.5 1]);
+        % % f_getArrayForField returns the required data for the left and right steps
+        % [tmp_data, ~] = f_getArrayForField(data.(section).(model), fieldsToPlotLeft{f}, 0, [], 'running');
+        % tmp_data = tmp_data / (data.(section).(model).model_mass * 9.81);
+        % stdshade(tmp_data, alpha, [1 0.5 0]);
+        % 
+        % % f_getArrayForField returns the required data for the left and right steps
+        % [~, tmp_data] = f_getArrayForField(data.(section).(model), fieldsToPlotRight{f}, 0, [], 'running');
+        % tmp_data = tmp_data / (data.(section).(model).model_mass * 9.81);
+        % stdshade(tmp_data * factorsRight(f), alpha, [0 0.5 1]);
 
         title(plotTitles{f}, 'Interpreter', 'none');
         ylabel('Force [BW]');

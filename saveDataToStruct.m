@@ -18,6 +18,11 @@ maxMarkerRMSErrorThreshold = 0.02;
 ignoreContralateralSide = 1;
 markersToCheckBothSides = {'RASI', 'LASI', 'LPSI', 'RPSI'};
 
+maxReserveActivation = 1; % set to -1 to ignore
+ignoreContrallateralReserves = 1;
+reservesToIgnoreBothSides = {' '}; % do not set to '';
+importTrialEvenIfReservesAreHigh = 1; % 0 skips also the import of IK and ID results; 1 reads all data and adds data.SO_Activation.(trial).reserversAreBelowThreshold = 0 flag
+
 %%
 for p = 1 : numel(modelList)
     disp(' ');
@@ -210,6 +215,62 @@ for p = 1 : numel(modelList)
                     cycle.left.valid(1 : size(cycle.left.start, 2)) = 1;
                 end
 
+                if maxReserveActivation > 0
+                    soFile = fullfile(currentFolder, 'Output', 'SO', '_StaticOptimization_activation.sto');
+                    if isfile(soFile)
+                        so_tempData = load_sto_file(soFile);
+                        tempFieldNames = fieldnames(so_tempData);
+                        reserves = tempFieldNames(contains(tempFieldNames, '_reserve'));
+                        reserves = reserves(~contains(reserves, 'lumbar'));
+                        if isfield(cycle, 'left')
+                            for j = 1 : size(cycle.left.start, 2)
+                                if cycle.left.valid(j)
+                                    cycle.left.validMuscleActivation(j) = 1;
+                                    for r = 1 : numel(reserves)
+                                        if ~contains(reserves{r}, reservesToIgnoreBothSides)
+                                            if ~(ignoreContrallateralReserves && contains(reserves{r}, '_r_'))
+                                                reserveData = so_tempData.(reserves{r})(cycle.left.start(j) - frameZero : cycle.left.end(j) - frameZero - 1);
+                                                % disp(reserves{r});
+                                                [maxValue, ind] = max(reserveData);
+                                                if maxValue > maxReserveActivation
+                                                    if importTrialEvenIfReservesAreHigh == 0
+                                                        cycle.left.valid(j) = 0;
+                                                    end
+                                                    cycle.left.validMuscleActivation(j) = 0;
+                                                    disp(['Left cycle ' num2str(j) ' muscle activations not valid, ' reserves{r} ' is higher ( ' num2str(maxValue, 2) ' ) than max threshold ( ' num2str(maxReserveActivation) ' )']);
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                        if isfield(cycle, 'right')
+                            for j = 1 : size(cycle.right.start, 2)
+                                if cycle.right.valid(j)
+                                    cycle.right.validMuscleActivation(j) = 1;
+                                    for r = 1 : numel(reserves)
+                                        if ~contains(reserves{r}, reservesToIgnoreBothSides)
+                                            if ~(ignoreContrallateralReserves && contains(reserves{r}, '_l_'))
+                                                reserveData = so_tempData.(reserves{r})(cycle.right.start(j) - frameZero : cycle.right.end(j) - frameZero - 1);
+                                                % disp(reserves{r});
+                                                [maxValue, ind] = max(reserveData);
+                                                if maxValue > maxReserveActivation
+                                                    if importTrialEvenIfReservesAreHigh == 0
+                                                        cycle.right.valid(j) = 0;
+                                                    end
+                                                    cycle.right.validMuscleActivation(j) = 0;
+                                                    disp(['Right cycle ' num2str(j) ' muscle activations not valid, ' reserves{r} ' is higher (' num2str(maxValue, 2) ') than max threshold ( = ' num2str(maxReserveActivation) ' )']);
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+
 
                 %crop data from left and right leg to stance phase
                 tempData = load_sto_file(ikFile);
@@ -351,7 +412,11 @@ for p = 1 : numel(modelList)
             if isfile(soFile)
                 data.SO_Activation.(modelList{p}).model_mass = model_mass;
                 %crop data from left and right leg to stance phase
-                tempData = load_sto_file(soFile);
+                if maxReserveActivation > 0 % SO file has already been loaded
+                    tempData = so_tempData;
+                else % read SO data from file
+                    tempData = load_sto_file(soFile);
+                end
                 tempFieldNames = fieldnames(tempData);
                 
                 if isfield(cycle, 'left')
@@ -362,7 +427,8 @@ for p = 1 : numel(modelList)
                                 tempStructLeft.(tempFieldNames{i}) = tempData.(tempFieldNames{i})(cycle.left.start(j) - frameZero : cycle.left.end(j) - frameZero - 1);
                             end
                             data.SO_Activation.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_left']) = tempStructLeft;
-                            data.SO_Activation.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_left']).durationInSeconds = double(cycle.left.end(j) - cycle.left.start(j)) / frequency;
+                            data.SO_Activation.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_left']).reserversAreBelowThreshold = cycle.left.validMuscleActivation(j);
+                            data.SO_Activation.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_left']).durationInSeconds = double(cycle.left.end(j) - cycle.left.start(j)) / frequency;                            
                         end
                     end
                 end
@@ -374,6 +440,7 @@ for p = 1 : numel(modelList)
                                 tempStructRight.(tempFieldNames{i}) = tempData.(tempFieldNames{i})(cycle.right.start(j) - frameZero : cycle.right.end(j) - frameZero - 1);
                             end
                             data.SO_Activation.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_right']) = tempStructRight;
+                            data.SO_Activation.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_right']).reserversAreBelowThreshold = cycle.right.validMuscleActivation(j);
                             data.SO_Activation.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_right']).durationInSeconds = double(cycle.right.end(j) - cycle.right.start(j)) / frequency;
                         end
                     end

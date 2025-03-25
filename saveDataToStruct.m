@@ -1,6 +1,6 @@
 %%
 clear;
-outputPath = 'C:\Users\Willi\ucloud\PhD\Study_LongitudinalMSK\SimulationOutput_Sanguex_GRF20Hz';
+% outputPath = 'C:\Users\Willi\ucloud\PhD\Study_LongitudinalMSK\SimulationOutput_Sanguex_GRF20Hz';
 outputPath = 'C:\Users\willi\ucloud\TreadmillTest\SimulationOutput';
 modelList = GetSubDirsFirstLevelOnly(outputPath);
 
@@ -12,8 +12,9 @@ electromechanicalDelay = 0.1; % in seconds
 
 % markerNamesToIgnoreWhenCheckingForErrors = {'C7'}; % example of markers
 % that you want to ignore
-markerNamesToIgnoreWhenCheckingForErrors = {''};
+markerNamesToIgnoreWhenCheckingForErrors = {'RTIB'};
 maxMarkerErrorThreshold = 0.04;
+maxMarkerRMSErrorThreshold = 0.02;
 ignoreContralateralSide = 1;
 markersToCheckBothSides = {'RASI', 'LASI', 'LPSI', 'RPSI'};
 
@@ -71,13 +72,6 @@ for p = 1 : numel(modelList)
                 leftHeel = [cell2mat(markerData.(['L' heelMarker '_X'])), cell2mat(markerData.(['L' heelMarker '_Y'])), cell2mat(markerData.(['L' heelMarker '_Z']))];
                 rightHeel = [cell2mat(markerData.(['R' heelMarker '_X'])), cell2mat(markerData.(['R' heelMarker '_Y'])), cell2mat(markerData.(['R' heelMarker '_Z']))];
 
-
-                %crop data from left and right leg to stance phase
-                clear tempData tempFieldNames tempStructLeft tempStructRight frameZero;
-                tempData = load_sto_file(ikFile);
-                tempFieldNames = fieldnames(tempData);
-                tempStructLeft = struct;
-                tempStructRight = struct;
                 if isfield(cycle, 'left') && isfield(cycle, 'right')
                     frameZero = min(min(cycle.left.start), min(cycle.right.start)) - 1;
                 elseif isfield(cycle, 'left')
@@ -128,9 +122,14 @@ for p = 1 : numel(modelList)
                         end
                     end
 
+                    for t = 1 : size(ik_loc, 1)
+                        markerRMSErrors(t) = rms(markerErrors(:, t));
+                    end
+
                     if isfield(cycle, 'left')
                         for j = 1 : size(cycle.left.start, 2)
                             markerErrorsInThisCycle = markerErrors(:, cycle.left.start(j) - frameZero : cycle.left.end(j) - frameZero - 1);
+                            markerRMSErrorsInThisCycle = markerRMSErrors(:, cycle.left.start(j) - frameZero : cycle.left.end(j) - frameZero - 1);
                             timeOfThisCycle = markerLocationsIKTime(cycle.left.start(j) - frameZero : cycle.left.end(j) - frameZero - 1);
                             tmpMarkerNames = markerNamesIK;
                             if ignoreContralateralSide
@@ -143,7 +142,14 @@ for p = 1 : numel(modelList)
                                 disp(['Left cycle ' num2str(j) ' not valid, Marker ' tmpMarkerNames{row} ' has error of ' num2str(maxValue) ' at time ' num2str(timeOfThisCycle(col)) ' s']);
                                 cycle.left.valid(j) = 0;
                             else
-                                cycle.left.valid(j) = 1;
+                                [maxValue, ind] = max(markerRMSErrorsInThisCycle, [], 'all');
+                                [row, col] = ind2sub(size(markerRMSErrorsInThisCycle), ind);
+                                if maxValue > maxMarkerRMSErrorThreshold
+                                    disp(['Left cycle ' num2str(j) ' not valid, RMS Marker error is ' num2str(max(markerRMSErrorsInThisCycle)) ' at time ' num2str(timeOfThisCycle(col)) ' s']);
+                                    cycle.left.valid(j) = 0;
+                                else
+                                    cycle.left.valid(j) = 1;
+                                end
                             end
                         end
                     end
@@ -151,6 +157,7 @@ for p = 1 : numel(modelList)
                     if isfield(cycle, 'right')
                         for j = 1 : size(cycle.right.start, 2)
                             markerErrorsInThisCycle = markerErrors(:, cycle.right.start(j) - frameZero : cycle.right.end(j) - frameZero - 1);
+                            markerRMSErrorsInThisCycle = markerRMSErrors(:, cycle.right.start(j) - frameZero : cycle.right.end(j) - frameZero - 1);
                             timeOfThisCycle = markerLocationsIKTime(cycle.right.start(j) - frameZero : cycle.right.end(j) - frameZero - 1);
                             tmpMarkerNames = markerNamesIK;
                             if ignoreContralateralSide
@@ -163,7 +170,14 @@ for p = 1 : numel(modelList)
                                 disp(['Right cycle ' num2str(j) ' not valid, Marker ' tmpMarkerNames{row} ' has error of ' num2str(maxValue) ' at time ' num2str(timeOfThisCycle(col)) ' s']);
                                 cycle.right.valid(j) = 0;
                             else
-                                cycle.right.valid(j) = 1;
+                                [maxValue, ind] = max(markerRMSErrorsInThisCycle, [], 'all');
+                                [row, col] = ind2sub(size(markerRMSErrorsInThisCycle), ind);
+                                if maxValue > maxMarkerRMSErrorThreshold
+                                    disp(['Right cycle ' num2str(j) ' not valid, RMS Marker error is ' num2str(max(markerRMSErrorsInThisCycle)) ' at time ' num2str(timeOfThisCycle(col)) ' s']);
+                                    cycle.right.valid(j) = 0;
+                                else
+                                    cycle.right.valid(j) = 1;
+                                end
                             end
                         end
                     end
@@ -195,6 +209,11 @@ for p = 1 : numel(modelList)
                     cycle.right.valid(1 : size(cycle.right.start, 2)) = 1;
                     cycle.left.valid(1 : size(cycle.left.start, 2)) = 1;
                 end
+
+
+                %crop data from left and right leg to stance phase
+                tempData = load_sto_file(ikFile);
+                tempFieldNames = fieldnames(tempData);
 
                 if isfield(cycle, 'left')
                     for j = 1 : size(cycle.left.start, 2)
@@ -265,22 +284,8 @@ for p = 1 : numel(modelList)
             if isfile(idFile)
                 data.ID.(modelList{p}).model_mass = model_mass;
                 %crop data from left and right leg to stance phase
-                clear tempData tempFieldNames tempStructLeft tempStructRight frameZero;
                 tempData = load_sto_file(idFile);
                 tempFieldNames = fieldnames(tempData);
-                tempStructLeft = struct;
-                tempStructRight = struct;
-                if isfield(cycle, 'left') && isfield(cycle, 'right')
-                    frameZero = min(min(cycle.left.start), min(cycle.right.start)) - 1;
-                elseif isfield(cycle, 'left')
-                    frameZero = min(cycle.left.start) - 1;
-                else
-                    frameZero = min(cycle.right.start) - 1;
-                end
-
-                if exist('preframes', 'var')
-                    frameZero = frameZero - floor(preframes); % this is a fix for the SO errors --> simulation started a few frames earlier to avoid activation limit
-                end
 
                 if isfield(cycle, 'left')
                     for j = 1 : size(cycle.left.start, 2)
@@ -313,24 +318,9 @@ for p = 1 : numel(modelList)
             if isfile(soFile)
                 data.SO.(modelList{p}).model_mass = model_mass;
                 %crop data from left and right leg to stance phase
-                clear tempData tempFieldNames tempStructLeft tempStructRight frameZero;
                 tempData = load_sto_file(soFile);
                 tempFieldNames = fieldnames(tempData);
-                tempStructLeft = struct;
-                tempStructRight = struct;
-                if isfield(cycle, 'left') && isfield(cycle, 'right')
-                    frameZero = min(min(cycle.left.start), min(cycle.right.start)) - 1;
-                elseif isfield(cycle, 'left')
-                    frameZero = min(cycle.left.start) - 1;
-                else
-                    frameZero = min(cycle.right.start) - 1;
-                end
-
-
-                if exist('preframes', 'var')
-                    frameZero = frameZero - floor(preframes); % this is a fix for the SO errors --> simulation started a few frames earlier to avoid activation limit
-                end
-
+                
                 if isfield(cycle, 'left')
                     for j = 1 : size(cycle.left.start, 2)
                         if cycle.left.valid(j)
@@ -361,24 +351,9 @@ for p = 1 : numel(modelList)
             if isfile(soFile)
                 data.SO_Activation.(modelList{p}).model_mass = model_mass;
                 %crop data from left and right leg to stance phase
-                clear tempData tempFieldNames tempStructLeft tempStructRight frameZero;
                 tempData = load_sto_file(soFile);
                 tempFieldNames = fieldnames(tempData);
-                tempStructLeft = struct;
-                tempStructRight = struct;
-                if isfield(cycle, 'left') && isfield(cycle, 'right')
-                    frameZero = min(min(cycle.left.start), min(cycle.right.start)) - 1;
-                elseif isfield(cycle, 'left')
-                    frameZero = min(cycle.left.start) - 1;
-                else
-                    frameZero = min(cycle.right.start) - 1;
-                end
-
-
-                if exist('preframes', 'var')
-                    frameZero = frameZero - floor(preframes); % this is a fix for the SO errors --> simulation started a few frames earlier to avoid activation limit
-                end
-
+                
                 if isfield(cycle, 'left')
                     for j = 1 : size(cycle.left.start, 2)
                         if cycle.left.valid(j)
@@ -474,24 +449,9 @@ for p = 1 : numel(modelList)
             if isfile(jrlFile)
                 data.JRL.(modelList{p}).model_mass = model_mass;
                 %crop data from left and right leg to stance phase
-                clear tempData tempFieldNames tempStructLeft tempStructRight frameZero;
                 tempData = load_sto_file(jrlFile);
                 tempFieldNames = fieldnames(tempData);
-                tempStructLeft = struct;
-                tempStructRight = struct;
-                if isfield(cycle, 'left') && isfield(cycle, 'right')
-                    frameZero = min(min(cycle.left.start), min(cycle.right.start)) - 1;
-                elseif isfield(cycle, 'left')
-                    frameZero = min(cycle.left.start) - 1;
-                else
-                    frameZero = min(cycle.right.start) - 1;
-                end
-
-
-                if exist('preframes', 'var')
-                    frameZero = frameZero - floor(preframes); % this is a fix for the SO errors --> simulation started a few frames earlier to avoid activation limit
-                end
-
+                
                 if isfield(cycle, 'left')
                     for j = 1 : size(cycle.left.start, 2)
                         if cycle.left.valid(j)
@@ -526,24 +486,9 @@ for p = 1 : numel(modelList)
             bodyKinFile = fullfile(currentFolder, 'Output', 'JRL', '_BodyKinematics_pos_global.sto');
             if isfile(bodyKinFile)
                 %crop data from left and right leg to stance phase
-                clear tempData tempFieldNames tempStructLeft tempStructRight frameZero;
                 tempData = load_sto_file(bodyKinFile);
                 tempFieldNames = fieldnames(tempData);
-                tempStructLeft = struct;
-                tempStructRight = struct;
-                if isfield(cycle, 'left') && isfield(cycle, 'right')
-                    frameZero = min(min(cycle.left.start), min(cycle.right.start)) - 1;
-                elseif isfield(cycle, 'left')
-                    frameZero = min(cycle.left.start) - 1;
-                else
-                    frameZero = min(cycle.right.start) - 1;
-                end
-
-
-                if exist('preframes', 'var')
-                    frameZero = frameZero - floor(preframes); % this is a fix for the SO errors --> simulation started a few frames earlier to avoid activation limit
-                end
-
+                
                 if isfield(cycle, 'left')
                     for j = 1 : size(cycle.left.start, 2)
                         if cycle.left.valid(j)

@@ -1,7 +1,8 @@
 clear;
-dataPath = 'C:\Users\Willi\Documents\UniDataLokal\TorsionToolComparison\Simulationsresults';
-load(fullfile(dataPath, 'dataStruct_ErrorScores.mat'));
-load("participantData.mat");
+% dataPath = 'C:\Users\Willi\Documents\UniDataLokal\TorsionToolComparison\Simulationsresults';
+dataPath = 'C:\Users\willi\ucloud\TreadmillTest\SimulationOutput';
+load(fullfile(dataPath, 'dataStruct_ErrorScores_no_trials_removed.mat'));
+
 %%
 
 alpha = 0.1;
@@ -26,75 +27,41 @@ factorsRight = ones(1, 12);
 factorsRight([3 6 9 12]) = -1;
 
 models = fieldnames(data.(section));
-models = models(contains(models, 'bdt'));
-% models = models(contains(models, 'WT'));
 
 for i = 1 : numel(models)
-    model = models{i}; 
-    figure('Units', 'normalized', 'Position', [0.1 0.1 0.7 0.7]); 
+    model = models{i};
+    figure('Units', 'normalized', 'Position', [0.1 0.1 0.7 0.7]);
     tiledlayout(4, 3)
     sgtitle(model, 'Interpreter', 'none')
 
-    participantID = str2double(model(3:4));
-    affectedLeg = particpantData(participantID, 2); % 1 == left; 2 == right
-
-
     for f = 1 : numel(fieldsToPlotLeft)
         nexttile(f); hold on;
+
         % f_getArrayForField returns the required data for the left and right steps
-        if affectedLeg == 1 % left
-            [tmp_data, ~] = f_getArrayForField(data.(section).(model), fieldsToPlotLeft{f});
-            tmp_data = tmp_data / (data.(section).(model).model_mass * 9.81);
-            stdshade(tmp_data, alpha, [1 0 0]);
-        else % right
-            % f_getArrayForField returns the required data for the left and right steps
-            [~, tmp_data] = f_getArrayForField(data.(section).(model), fieldsToPlotRight{f});
-            tmp_data = tmp_data / (data.(section).(model).model_mass * 9.81);
-            stdshade(tmp_data * factorsRight(f), alpha, [0 0 1]);
-        end
+        [tmp_data, ~] = f_getArrayForField(data.(section).(model), fieldsToPlotLeft{f}, 0, [], 'walking');
+        tmp_data = tmp_data / (data.(section).(model).model_mass * 9.81);
+        stdshade(tmp_data, alpha, [1 0 0]);
+
+        % f_getArrayForField returns the required data for the left and right steps
+        [~, tmp_data] = f_getArrayForField(data.(section).(model), fieldsToPlotRight{f}, 0, [], 'walking');
+        tmp_data = tmp_data / (data.(section).(model).model_mass * 9.81);
+        stdshade(tmp_data * factorsRight(f), alpha, [0 0 1]);
+
+        % f_getArrayForField returns the required data for the left and right steps
+        [tmp_data, ~] = f_getArrayForField(data.(section).(model), fieldsToPlotLeft{f}, 0, [], 'running');
+        tmp_data = tmp_data / (data.(section).(model).model_mass * 9.81);
+        stdshade(tmp_data, alpha, [1 0.5 0]);
+
+        % f_getArrayForField returns the required data for the left and right steps
+        [~, tmp_data] = f_getArrayForField(data.(section).(model), fieldsToPlotRight{f}, 0, [], 'running');
+        tmp_data = tmp_data / (data.(section).(model).model_mass * 9.81);
+        stdshade(tmp_data * factorsRight(f), alpha, [0 0.5 1]);
+
         title(plotTitles{f}, 'Interpreter', 'none');
         ylabel('Force [BW]');
         xlabel('Gait Cycle [%]');
     end
 
-    % plot torsion tool model
-    model = strrep(models{i}, 'bdt_', '');
-    for f = 1 : numel(fieldsToPlotLeft)
-        nexttile(f); hold on;
-        % f_getArrayForField returns the required data for the left and right steps
-        if affectedLeg == 1 % left
-            [tmp_data, ~] = f_getArrayForField(data.(section).(model), fieldsToPlotLeft{f});
-            tmp_data = tmp_data / (data.(section).(model).model_mass * 9.81);
-            stdshade(tmp_data, alpha, [1 1 0]);
-        else % right
-            % f_getArrayForField returns the required data for the left and right steps
-            [~, tmp_data] = f_getArrayForField(data.(section).(model), fieldsToPlotRight{f});
-            tmp_data = tmp_data / (data.(section).(model).model_mass * 9.81);
-            stdshade(tmp_data * factorsRight(f), alpha, [0 1 1]);
-        end
-    end
-
-    % plot generic model
-    model = strrep(models{i}, 'bdt_scaled', 'WT');
-    for f = 1 : numel(fieldsToPlotLeft)
-        nexttile(f); hold on;
-        % f_getArrayForField returns the required data for the left and right steps
-        if affectedLeg == 1 % left
-            [tmp_data, ~] = f_getArrayForField(data.(section).(model), fieldsToPlotLeft{f});
-            tmp_data = tmp_data / (data.(section).(model).model_mass * 9.81);
-            stdshade(tmp_data, alpha, [0.4940 0.1840 0.5560]);
-        else % right
-            % f_getArrayForField returns the required data for the left and right steps
-            [~, tmp_data] = f_getArrayForField(data.(section).(model), fieldsToPlotRight{f});
-            tmp_data = tmp_data / (data.(section).(model).model_mass * 9.81);
-            stdshade(tmp_data * factorsRight(f), alpha, [0.6350 0.0780 0.1840]);
-        end
-    end
-
-    if affectedLeg == 1
-        leg = legend({'', 'LEFT bdt', '', 'left TT', '', 'left Generic'}, 'Orientation', 'Horizontal');
-    else
-        leg = legend({'', 'RIGHT bdt','', 'right TT','', 'right Generic'}, 'Orientation', 'Horizontal');
-    end
+    leg = legend({'', 'walking left', '', 'walking right', '', 'running left', '', 'running right'}, 'Orientation', 'Horizontal');
     leg.Layout.Tile = 'north';
 end

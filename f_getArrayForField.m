@@ -1,4 +1,4 @@
-function [outputArr_left, outputArr_right] = f_getArrayForField(modelStruct, fieldOfInterest, startOfStancePhase, footOffFrameStruct)
+function [outputArr_left, outputArr_right] = f_getArrayForField(modelStruct, fieldOfInterest, startOfStancePhase, footOffFrameStruct, trialFilter)
     if ~exist('startOfStancePhase', 'var')
         startOfStancePhase = 0;
     elseif ~exist('footOffFrameStruct', 'var')
@@ -8,6 +8,9 @@ function [outputArr_left, outputArr_right] = f_getArrayForField(modelStruct, fie
     
     trialList = fieldnames(modelStruct);
     trialList = trialList(contains(trialList, 'T_'));
+    if exist('trialFilter', 'var')
+        trialList = trialList(contains(trialList, trialFilter));
+    end
     leftTrials = trialList(contains(trialList, 'left'));
     rightTrials = trialList(contains(trialList, 'right'));
 

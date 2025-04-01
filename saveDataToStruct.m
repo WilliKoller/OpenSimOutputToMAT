@@ -1,7 +1,8 @@
 %%
 clear;
 % outputPath = 'C:\Users\Willi\ucloud\PhD\Study_LongitudinalMSK\SimulationOutput_Sanguex_GRF20Hz';
-outputPath = 'C:\Users\willi\ucloud\TreadmillTest\SimulationOutput';
+outputPath = 'C:\Users\Biomechanik\SynologyDrive\AlexP\SimulationOutputCatelli';
+
 modelList = GetSubDirsFirstLevelOnly(outputPath);
 
 mergestructs = @(x,y) cell2struct([struct2cell(x);struct2cell(y)],[fieldnames(x);fieldnames(y)]);
@@ -12,14 +13,14 @@ electromechanicalDelay = 0.1; % in seconds
 
 % markerNamesToIgnoreWhenCheckingForErrors = {'C7'}; % example of markers
 % that you want to ignore
-markerNamesToIgnoreWhenCheckingForErrors = {'RTIB'};
-maxMarkerErrorThreshold = 0.04;
-maxMarkerRMSErrorThreshold = 0.02;
-ignoreContralateralSide = 1;
+markerNamesToIgnoreWhenCheckingForErrors = {};
+maxMarkerErrorThreshold = 0.05;
+maxMarkerRMSErrorThreshold = 0.03;
+ignoreContralateralSide = 0;
 markersToCheckBothSides = {'RASI', 'LASI', 'LPSI', 'RPSI'};
 
 maxReserveActivation = 1; % set to -1 to ignore
-ignoreContrallateralReserves = 1;
+ignoreContrallateralReserves = 0;
 reservesToIgnoreBothSides = {' '}; % do not set to '';
 importTrialEvenIfReservesAreHigh = 1; % 0 skips also the import of IK and ID results; 1 reads all data and adds data.SO_Activation.(trial).reserversAreBelowThreshold = 0 flag
 
@@ -65,7 +66,7 @@ for p = 1 : numel(modelList)
 
                 markerFileName = f(i0 + 13 : i1 - 1);
 
-                markerFileName = strrep(markerFileName, 'C:\Users\Biomechanik\Desktop\Willi\Study_LongitudinalMSK', 'C:\Users\Willi\ucloud\PhD\Study_LongitudinalMSK');
+                % markerFileName = strrep(markerFileName, 'C:\Users\Biomechanik\Desktop\Willi\Study_LongitudinalMSK', 'C:\Users\Willi\ucloud\PhD\Study_LongitudinalMSK');
 
                 markerData = load_marker_trc(markerFileName);
                 markerNames = fieldnames(markerData);
@@ -120,6 +121,12 @@ for p = 1 : numel(modelList)
 
                         % inputMarkerName = [markerNameIK(1:end-2) upper(markerNameIK(end))];
                         input_loc = [cell2mat(markerData.([markerName '_X'])) cell2mat(markerData.([markerName '_Y'])) cell2mat(markerData.([markerName '_Z']))];
+                        if range(ik_loc(:, 1) > range(input_loc(:, 1)) * 50 )
+                            ik_loc = ik_loc ./ 1000;
+                        elseif range(input_loc(:, 1)) > range(ik_loc(:, 1)) * 50
+                            input_loc = input_loc ./ 1000;
+                        end
+
                         input_loc = input_loc(offsetFrames : end, :);
 
                         for t = 1 : size(ik_loc, 1)
@@ -278,7 +285,7 @@ for p = 1 : numel(modelList)
 
                 if isfield(cycle, 'left')
                     for j = 1 : size(cycle.left.start, 2)
-                        if cycle.left.valid(j)
+                        if cycle.left.valid(j) || importTrialEvenIfReservesAreHigh
                             clear tempStructLeft;
 
                             heelPositionStrike1 = leftHeel(cycle.left.start(j) - frameZero, :);
@@ -307,7 +314,7 @@ for p = 1 : numel(modelList)
                 end
                 if isfield(cycle, 'right')
                     for j = 1 : size(cycle.right.start, 2)
-                        if cycle.right.valid(j)
+                        if cycle.right.valid(j) || importTrialEvenIfReservesAreHigh
                             clear tempStructRight;
 
                             heelPositionStrike1 = rightHeel(cycle.right.start(j) - frameZero, :);
@@ -350,7 +357,7 @@ for p = 1 : numel(modelList)
 
                 if isfield(cycle, 'left')
                     for j = 1 : size(cycle.left.start, 2)
-                        if cycle.left.valid(j)
+                        if cycle.left.valid(j) || importTrialEvenIfReservesAreHigh
                             clear tempStructLeft;
                             for i = 1 : numel(tempFieldNames)
                                 tempStructLeft.(tempFieldNames{i}) = tempData.(tempFieldNames{i})(cycle.left.start(j) - frameZero : cycle.left.end(j) - frameZero - 1);
@@ -362,7 +369,7 @@ for p = 1 : numel(modelList)
                 end
                 if isfield(cycle, 'right')
                     for j = 1 : size(cycle.right.start, 2)
-                        if cycle.right.valid(j)
+                        if cycle.right.valid(j) || importTrialEvenIfReservesAreHigh
                             clear tempStructRight;
                             for i = 1 : numel(tempFieldNames)
                                 tempStructRight.(tempFieldNames{i}) = tempData.(tempFieldNames{i})(cycle.right.start(j) - frameZero : cycle.right.end(j) - frameZero - 1);
@@ -384,7 +391,7 @@ for p = 1 : numel(modelList)
                 
                 if isfield(cycle, 'left')
                     for j = 1 : size(cycle.left.start, 2)
-                        if cycle.left.valid(j)
+                        if cycle.left.valid(j) || importTrialEvenIfReservesAreHigh
                             clear tempStructLeft;
                             for i = 1 : numel(tempFieldNames)
                                 tempStructLeft.(tempFieldNames{i}) = tempData.(tempFieldNames{i})(cycle.left.start(j) - frameZero : cycle.left.end(j) - frameZero - 1);
@@ -396,7 +403,7 @@ for p = 1 : numel(modelList)
                 end
                 if isfield(cycle, 'right')
                     for j = 1 : size(cycle.right.start, 2)
-                        if cycle.right.valid(j)
+                        if cycle.right.valid(j) || importTrialEvenIfReservesAreHigh
                             clear tempStructRight;
                             for i = 1 : numel(tempFieldNames)
                                 tempStructRight.(tempFieldNames{i}) = tempData.(tempFieldNames{i})(cycle.right.start(j) - frameZero : cycle.right.end(j) - frameZero - 1);
@@ -421,7 +428,7 @@ for p = 1 : numel(modelList)
                 
                 if isfield(cycle, 'left')
                     for j = 1 : size(cycle.left.start, 2)
-                        if cycle.left.valid(j)
+                        if cycle.left.valid(j) || importTrialEvenIfReservesAreHigh
                             clear tempStructLeft;
                             for i = 1 : numel(tempFieldNames)
                                 tempStructLeft.(tempFieldNames{i}) = tempData.(tempFieldNames{i})(cycle.left.start(j) - frameZero : cycle.left.end(j) - frameZero - 1);
@@ -434,7 +441,7 @@ for p = 1 : numel(modelList)
                 end
                 if isfield(cycle, 'right')
                     for j = 1 : size(cycle.right.start, 2)
-                        if cycle.right.valid(j)
+                        if cycle.right.valid(j) || importTrialEvenIfReservesAreHigh
                             clear tempStructRight;
                             for i = 1 : numel(tempFieldNames)
                                 tempStructRight.(tempFieldNames{i}) = tempData.(tempFieldNames{i})(cycle.right.start(j) - frameZero : cycle.right.end(j) - frameZero - 1);
@@ -464,14 +471,14 @@ for p = 1 : numel(modelList)
                 emg_fields = fieldnames(emg_filtered);
                 if isfield(cycle, 'left')
                     for j = 1 : size(cycle.left.start, 2)
-                        if cycle.left.valid(j)
+                        if cycle.left.valid(j) || importTrialEvenIfReservesAreHigh
                             startTimeCycle = data.IK.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_left']).time(1);
                             startTimeCycleMinusDelay = data.IK.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_left']).time(1) - electromechanicalDelay;
                             endTimeCycle = data.IK.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_left']).time(end);
                             emgIndizes = and(emg_filtered.time >= startTimeCycle, emg_filtered.time <= endTimeCycle);
                             emgIndizesWithDelay = and(emg_filtered.time >= startTimeCycleMinusDelay, emg_filtered.time <= endTimeCycle);
                             for i = 1 : numel(emg_fields)
-                                if strcmp(emg_fields{i}(1:2), 'L_') || strcmp(emg_fields{i}(1:2), 'R_') || strcmp(emg_fields{i}, 'time')
+                                if strcmp(emg_fields{i}(1:2), 'L_') || strcmp(emg_fields{i}(1:2), 'R_') || strcmp(emg_fields{i}, 'time') || contains(emg_fields{i}, 'EMG')
                                     data.EMG.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_left']).(emg_fields{i}) = emg_filtered.(emg_fields{i})(emgIndizes);
                                     data.EMG_electromechanicalDelay.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_left']).(emg_fields{i}) = emg_filtered.(emg_fields{i})(emgIndizesWithDelay);
                                     if startTimeCycleMinusDelay >= 0
@@ -488,14 +495,14 @@ for p = 1 : numel(modelList)
                 end
                 if isfield(cycle, 'right')
                     for j = 1 : size(cycle.right.start, 2)
-                        if cycle.right.valid(j)
+                        if cycle.right.valid(j) || importTrialEvenIfReservesAreHigh
                             startTimeCycle = data.IK.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_right']).time(1);
                             startTimeCycleMinusDelay = data.IK.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_right']).time(1) - electromechanicalDelay;
                             endTimeCycle = data.IK.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_right']).time(end);
                             emgIndizes = and(emg_filtered.time >= startTimeCycle, emg_filtered.time <= endTimeCycle);
                             emgIndizesWithDelay = and(emg_filtered.time >= startTimeCycleMinusDelay, emg_filtered.time <= endTimeCycle);
                             for i = 1 : numel(emg_fields)
-                                if strcmp(emg_fields{i}(1:2), 'L_') || strcmp(emg_fields{i}(1:2), 'R_') || strcmp(emg_fields{i}, 'time')
+                                if strcmp(emg_fields{i}(1:2), 'L_') || strcmp(emg_fields{i}(1:2), 'R_') || strcmp(emg_fields{i}, 'time') || contains(emg_fields{i}, 'EMG')
                                     data.EMG.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_right']).(emg_fields{i}) = emg_filtered.(emg_fields{i})(emgIndizes);
                                     data.EMG_electromechanicalDelay.(modelList{p}).(['T_' trialList{trialNr} '_' num2str(j) '_right']).(emg_fields{i}) = emg_filtered.(emg_fields{i})(emgIndizesWithDelay);
                                     if startTimeCycleMinusDelay >= 0
@@ -521,7 +528,7 @@ for p = 1 : numel(modelList)
                 
                 if isfield(cycle, 'left')
                     for j = 1 : size(cycle.left.start, 2)
-                        if cycle.left.valid(j)
+                        if cycle.left.valid(j) || importTrialEvenIfReservesAreHigh
                             clear tempStructLeft;
                             for i = 1 : numel(tempFieldNames)
                                 tempStructLeft.(tempFieldNames{i}) = tempData.(tempFieldNames{i})(cycle.left.start(j) - frameZero : cycle.left.end(j) - frameZero - 1);
@@ -533,7 +540,7 @@ for p = 1 : numel(modelList)
                 end
                 if isfield(cycle, 'right')
                     for j = 1 : size(cycle.right.start, 2)
-                        if cycle.right.valid(j)
+                        if cycle.right.valid(j) || importTrialEvenIfReservesAreHigh
                             clear tempStructRight;
                             for i = 1 : numel(tempFieldNames)
                                 tempStructRight.(tempFieldNames{i}) = tempData.(tempFieldNames{i})(cycle.right.start(j) - frameZero : cycle.right.end(j) - frameZero - 1);
@@ -558,7 +565,7 @@ for p = 1 : numel(modelList)
                 
                 if isfield(cycle, 'left')
                     for j = 1 : size(cycle.left.start, 2)
-                        if cycle.left.valid(j)
+                        if cycle.left.valid(j) || importTrialEvenIfReservesAreHigh
                             clear tempStructLeft;
                             for i = 1 : numel(tempFieldNames)
                                 tempStructLeft.(tempFieldNames{i}) = tempData.(tempFieldNames{i})(cycle.left.start(j) - frameZero : cycle.left.end(j) - frameZero - 1);
@@ -578,7 +585,7 @@ for p = 1 : numel(modelList)
                 end
                 if isfield(cycle, 'right')
                     for j = 1 : size(cycle.right.start, 2)
-                        if cycle.right.valid(j)
+                        if cycle.right.valid(j) || importTrialEvenIfReservesAreHigh
                             clear tempStructRight;
                             for i = 1 : numel(tempFieldNames)
                                 tempStructRight.(tempFieldNames{i}) = tempData.(tempFieldNames{i})(cycle.right.start(j) - frameZero : cycle.right.end(j) - frameZero - 1);
